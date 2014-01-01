@@ -124,5 +124,3 @@ while true do
   i += 1
   sleep(600)
 end
-
-#puts "+++++ Day Total: #{@sum} PTS (#{@ags} AGS/PTS) +++++"

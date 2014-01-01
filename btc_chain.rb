@@ -124,5 +124,3 @@ while true do
   i += 1
   sleep(60)
 end
-
-#puts "+++++ Day Total: #{@sum} BTC (#{@ags} AGS/BTC) +++++"
