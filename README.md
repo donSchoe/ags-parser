@@ -55,6 +55,9 @@ of the GNU General Public License along with this program. If not, see:
 Written 2014 by donSchoe, contact me on freenode IRC or send me a Mail to:
   donSchoe@qhor.net
 
+Feedback thread:
+
+ - https://bitsharestalk.org/index.php?topic=1853.0
 
 Donations accepted:
 
