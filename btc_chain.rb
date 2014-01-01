@@ -3,6 +3,10 @@
 # Ruby parser for Angelshares in the Bitcoin Blockchain.
 # Usage: $ ruby btc_chain.rb [block=276970]
 #
+# Donations accepted:
+# - BTC 1Bzc7PatbRzXz6EAmvSuBuoWED96qy3zgc
+# - PTS PcDLYukq5RtKyRCeC1Gv5VhAJh88ykzfka
+#
 # Copyright (C) 2014 donSchoe <donschoe@qhor.net>
 #
 # This program is free software: you can redistribute it and/or modify it under

@@ -3,6 +3,10 @@
 # Ruby parser for Angelshares in the Protoshares Blockchain.
 # Usage: $ ruby pts_chain.rb [block=35450]
 #
+# Donations accepted:
+# - BTC 1Bzc7PatbRzXz6EAmvSuBuoWED96qy3zgc
+# - PTS PcDLYukq5RtKyRCeC1Gv5VhAJh88ykzfka
+#
 # Copyright (C) 2014 donSchoe <donschoe@qhor.net>
 #
 # This program is free software: you can redistribute it and/or modify it under
