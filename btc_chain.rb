@@ -56,13 +56,13 @@ def parse_tx(hi, time, tx)
       value = vout["value"]
       if not address.nil?
         if address.include? '1ANGELwQwWxMmbdaSWhWLqBEtPTkWb8uDc'
-          while (time.to_i > @day.to_i + 86400) do
+          while (time.to_i > @day.to_i) do
             puts "+++++ Day Total: #{@sum} BTC (#{@ags} AGS/BTC) +++++"
-            @sum = 0.0
-            @day += 86400
             puts ""
             puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
             puts "BLOCK;DATETIME;SENDER;DONATION[BTC];SUM[BTC];RATE[AGS/BTC];EXPECTED[AGS]"
+            @sum = 0.0
+            @day += 86400
           end
           @sum += value
           stamp = Time.at(time.to_i).utc

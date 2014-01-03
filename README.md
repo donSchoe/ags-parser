@@ -12,6 +12,10 @@ Output of the script
  - BTC http://q39.qhor.net/ags/btc.txt
  - PTS http://q39.qhor.net/ags/pts.txt
 
+See my bot parsing the output on #angleshares at Freenode.
+
+ - http://de.irc2go.com/webchat/?net=freenode&room=angelshares&nick=github1337
+
 Requirements
 ------------
 
