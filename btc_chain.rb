@@ -26,7 +26,7 @@ require 'json'
 
 ################################################################################
 
-# Point this path to your PTS daemon!
+# Point this path to your BTC daemon!
 @path = '/path/to/bitcoind'
 
 # Enable/Disable debugging output.
