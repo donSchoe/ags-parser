@@ -34,59 +34,108 @@ require 'json'
 
 ################################################################################
 
+# gets block number (height) to start the script at
 if ARGV[0].nil?
+  # default
   blockstrt = 276970
 else
+  # from args
   blockstrt = ARGV[0].to_i
 end
 
+# initializes global args
 @sum = 0.0
 @ags = 0
 @day = 1388620800
+i=0
 
+################################################################################
+
+# script output start (CSV header)
 puts "BLOCK;DATETIME;SENDER;DONATION[BTC];SUM[BTC];RATE[AGS/BTC];EXPECTED[AGS]"
 
-def parse_tx(hi, time, tx)
+# parses given transactions
+def parse_tx(hi=nil, time=nil, tx)
   begin
+
+    # gets raw transaction
     rawtx = `#{@path} getrawtransaction #{tx}`
+
+    # gets transaction JSON data
     jsontx = `#{@path} decoderawtransaction #{rawtx}`
     jsontx = JSON.parse(jsontx)
+
+    # check every transaction output
     jsontx["vout"].each do |vout|
+
+      # gets recieving address and value
       address = vout["scriptPubKey"]["addresses"]
       value = vout["value"]
+
+      # checks addresses for being angelshares donation address
       if not address.nil?
         if address.include? '1ANGELwQwWxMmbdaSWhWLqBEtPTkWb8uDc'
+
+          # display daily summary and split CSV data in days
           while (time.to_i > @day.to_i) do
             puts "+++++ Day Total: #{@sum} BTC (#{@ags} AGS/BTC) +++++"
             puts ""
             puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
             puts "BLOCK;DATETIME;SENDER;DONATION[BTC];SUM[BTC];RATE[AGS/BTC];EXPECTED[AGS]"
+
+            # reset BTC sum and sitch day
             @sum = 0.0
             @day += 86400
           end
+
+          # sums up donated BTC value
           @sum += value
+
+          # gets UTC timestamp
           stamp = Time.at(time.to_i).utc
+
+          # calculates current angelshares ratio
           @ags = 5000.0 / @sum
+
+          # calculates expected angelshares
           expected = value * @ags
+
+          # parses the sender from input txid and n
           sendertx = jsontx['vin'].first['txid']
           sendernn = jsontx['vin'].first['vout']
+
+          # gets raw transaction of the sender
           senderrawtx = `#{@path} getrawtransaction #{sendertx}`
+
+          # gets transaction JSON data of the sender
           senderjsontx = `#{@path} decoderawtransaction #{senderrawtx}`
           senderjsontx = JSON.parse(senderjsontx)
           sender = 'unknown'
+
+          # scan sender transaction for sender address
           senderjsontx["vout"].each do |sendervout|
             if sendervout['n'].eql? sendernn
+
+              # gets angelshares sender address
+              # @TODO https://github.com/donSchoe/ags-parser/issues/3
               sender = sendervout['scriptPubKey']['addresses'].first
             end
           end
+
+          # displays current transaction details
           puts hi.to_s + ';' + stamp.to_s + ';' + sender.to_s + ';' + value.to_s + ';' + @sum.to_s + ';' + @ags.to_s + ';' + expected.to_s
         end
       else
+
+        # debugging warning: transaction without output address
         if @debug
           puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
         end
       end
     end
+
+  # catches transactions which are too big to parse
+  # @TODO https://github.com/donSchoe/ags-parser/issues/2
   rescue Errno::E2BIG
     if @debug
       puts "!!!ERROR TX TOO BIG TO PARSE #{tx}"
@@ -94,33 +143,63 @@ def parse_tx(hi, time, tx)
   end
 end
 
-i=0
+# starts parsing the blockchain in infinite loop
 while true do
+
+  # debugging output: loop number & start block height
   if @debug
     puts "---DEBUG LOOP #{i}"
     puts "---DEBUG BLOCK #{blockstrt}"
   end
+
+  # gets current block height
   blockhigh = `#{@path} getblockcount`
+
+  #reads every block by block
   (blockstrt.to_i..blockhigh.to_i).each do |hi|
+
+    # gets block hash string
     blockhash = `#{@path} getblockhash #{hi}`
+
+    # gets JSON block data
     blockinfo = `#{@path} getblock #{blockhash}`
+
+    # gets block transactions & time
     transactions = JSON.parse(blockinfo)['tx']
     time = JSON.parse(blockinfo)['time']
+
+    # parses transactions ...
     if not transactions.nil?
       if not transactions.size <= 1
         transactions.each do |tx|
+
+          # ... one by one
           parse_tx(hi, time, tx)
         end
       else
+
+        # ... only one available
         parse_tx(hi, time, transactions.first)
+      end
+    else
+
+      # debugging warning: block without transactions
+      if @debug
+        puts "!!!WARNG NO TRANSACTIONS IN BLOCK #{hi}"
       end
     end
   end
+
+  # debugging output: current loop summary
   if @debug
     puts "---DEBUG SUM #{@sum}"
     puts "---DEBUG VALUE #{@ags}"
   end
+
+  # resets starting block height to next unparsed block
   blockstrt = blockhigh.to_i + 1
   i += 1
-  sleep(60)
+
+  # wait for new blocks to appear
+  sleep(600)
 end
