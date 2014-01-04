@@ -52,7 +52,7 @@ i=0
 ################################################################################
 
 # script output start (CSV header)
-puts "BLOCK;DATETIME;SENDER;DONATION[PTS];SUM[PTS];RATE[AGS/PTS];EXPECTED[AGS]"
+puts "BLOCK;DATETIME;SENDER;DONATION[PTS];SUM[PTS];RATE[AGS/PTS]"
 
 # parses given transactions
 def parse_tx(hi=nil, time=nil, tx)
@@ -81,7 +81,7 @@ def parse_tx(hi=nil, time=nil, tx)
             puts "+++++ Day Total: #{@sum} PTS (#{@ags} AGS/PTS) +++++"
             puts ""
             puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
-            puts "BLOCK;DATETIME;SENDER;DONATION[PTS];SUM[PTS];RATE[AGS/PTS];EXPECTED[AGS]"
+            puts "BLOCK;DATETIME;SENDER;DONATION[PTS];SUM[PTS];RATE[AGS/PTS]"
 
             # reset PTS sum and sitch day
             @sum = 0.0
@@ -96,9 +96,6 @@ def parse_tx(hi=nil, time=nil, tx)
 
           # calculates current angelshares ratio
           @ags = 5000.0 / @sum
-
-          # calculates expected angelshares
-          expected = value * @ags
 
           # checks each input for sender addresses
           senderad = ''
@@ -139,7 +136,7 @@ def parse_tx(hi=nil, time=nil, tx)
           end
 
           # displays current transaction details
-          puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + sender.to_s + "\";\"" + value.to_s + "\";\"" + @sum.to_s + "\";\"" + @ags.to_s + "\";\"" + expected.to_s + "\""
+          puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + sender.to_s + "\";\"" + value.to_s + "\";\"" + @sum.to_s + "\";\"" + @ags.to_s + "\""
         end
       else
 
