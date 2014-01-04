@@ -32,6 +32,9 @@ require 'json'
 # Enable/Disable debugging output.
 @debug = false
 
+# Enable/Display daily summaries and output clean CSV only.
+@clean_csv = true
+
 ################################################################################
 
 # gets block number (height) to start the script at
@@ -78,10 +81,14 @@ def parse_tx(hi=nil, time=nil, tx)
 
           # display daily summary and split CSV data in days
           while (time.to_i > @day.to_i) do
-            puts "+++++ Day Total: #{@sum} BTC (#{@ags} AGS/BTC) +++++"
-            puts ""
-            puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
-            puts "BLOCK;DATETIME;SENDER;DONATION[BTC];SUM[BTC];RATE[AGS/BTC]"
+
+            # disable summary output for clean CSV files
+            if not @clean_csv
+              puts "+++++ Day Total: #{@sum} BTC (#{@ags} AGS/BTC) +++++"
+              puts ""
+              puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
+              puts "BLOCK;DATETIME;SENDER;DONATION[BTC];SUM[BTC];RATE[AGS/BTC]"
+            end
 
             # reset BTC sum and sitch day
             @sum = 0.0
