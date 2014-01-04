@@ -105,7 +105,7 @@ def parse_tx(hi=nil, time=nil, tx)
           @ags = 5000.0 / @sum
 
           # checks each input for sender addresses
-          senderad = ''
+          senderhash = Hash.new
           jsontx['vin'].each do |vin|
 
             # parses the sender from input txid and n
@@ -123,27 +123,35 @@ def parse_tx(hi=nil, time=nil, tx)
             senderjsontx["vout"].each do |sendervout|
               if sendervout['n'].eql? sendernn
 
-                # gets angelshares sender address
-                senderad += sendervout['scriptPubKey']['addresses'].first + ','
+                # gets angelshares sender address and input value
+                if senderhash[sendervout['scriptPubKey']['addresses'].first.to_s].nil?
+                  senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] = sendervout['value'].to_f
+                else
+                  senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] += sendervout['value'].to_f
+                end
               end
             end
           end
 
-          # parses the sender addresses & cleans up
-          senderad = senderad[0..-2].split(',')
-          if senderad.size > 1
-            senderad = senderad.uniq
-            sender = ''
-            senderad.each do |s|
-              sender += s + ','
+          # gets donation value by each input address of the transaction
+          outval = value
+          presum = 0.0
+          sumval = 0.0
+          senderhash.each do |key, inval|
+            printval = 0.0
+            sumval += inval
+            if sumval <= outval
+              printval = inval
+            else
+              printval = outval - presum
             end
-            sender = sender[0..-2]
-          else
-            sender = senderad.first
-          end
 
-          # displays current transaction details
-          puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + sender.to_s + "\";\"" + value.to_s + "\";\"" + @sum.to_s + "\";\"" + @ags.to_s + "\""
+            # prints donation stats if input value is above 0
+            if printval > 0
+              puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + key.to_s + "\";\"" + printval.round(8).to_s + "\";\"" + @sum.round(8).to_s + "\";\"" + @ags.round(8).to_s + "\""
+            end
+            presum += inval
+          end
         end
       else
 
