@@ -30,6 +30,9 @@ transactions within the blockchain.
 Usage
 -----
 
+Open the script to modify `@path`, `@debug` and `@clean_csv` settings. Then run
+the script.
+
 To output the transactions to STDOUT:
 
 `$ ruby btc_chain.rb [block=276970]`
