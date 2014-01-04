@@ -100,30 +100,46 @@ def parse_tx(hi=nil, time=nil, tx)
           # calculates expected angelshares
           expected = value * @ags
 
-          # parses the sender from input txid and n
-          sendertx = jsontx['vin'].first['txid']
-          sendernn = jsontx['vin'].first['vout']
+          # checks each input for sender addresses
+          senderad = ''
+          jsontx['vin'].each do |vin|
 
-          # gets raw transaction of the sender
-          senderrawtx = `#{@path} getrawtransaction #{sendertx}`
+            # parses the sender from input txid and n
+            sendertx = vin['txid']
+            sendernn = vin['vout']
 
-          # gets transaction JSON data of the sender
-          senderjsontx = `#{@path} decoderawtransaction #{senderrawtx}`
-          senderjsontx = JSON.parse(senderjsontx)
-          sender = 'unknown'
+            # gets raw transaction of the sender
+            senderrawtx = `#{@path} getrawtransaction #{sendertx}`
 
-          # scan sender transaction for sender address
-          senderjsontx["vout"].each do |sendervout|
-            if sendervout['n'].eql? sendernn
+            # gets transaction JSON data of the sender
+            senderjsontx = `#{@path} decoderawtransaction #{senderrawtx}`
+            senderjsontx = JSON.parse(senderjsontx)
 
-              # gets angelshares sender address
-              # @TODO https://github.com/donSchoe/ags-parser/issues/3
-              sender = sendervout['scriptPubKey']['addresses'].first
+            # scan sender transaction for sender address
+            senderjsontx["vout"].each do |sendervout|
+              if sendervout['n'].eql? sendernn
+
+                # gets angelshares sender address
+                senderad += sendervout['scriptPubKey']['addresses'].first + ','
+              end
             end
           end
 
+          # parses the sender addresses & cleans up
+          senderad = senderad[0..-2].split(',')
+          if senderad.size > 1
+            senderad = senderad.uniq
+            sender = ''
+            senderad.each do |s|
+              sender += s + ','
+            end
+            sender = sender[0..-2]
+          else
+            sender = senderad.first
+          end
+
           # displays current transaction details
-          puts hi.to_s + ';' + stamp.to_s + ';' + sender.to_s + ';' + value.to_s + ';' + @sum.to_s + ';' + @ags.to_s + ';' + expected.to_s
+          puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + sender.to_s + "\";\"" + value.to_s + "\";\"" + @sum.to_s + "\";\"" + @ags.to_s + "\";\"" + expected.to_s + "\""
         end
       else
 
