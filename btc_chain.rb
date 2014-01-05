@@ -95,9 +95,6 @@ def parse_tx(hi=nil, time=nil, tx)
             @day += 86400
           end
 
-          # sums up donated BTC value
-          @sum += value
-
           # gets UTC timestamp
           stamp = Time.at(time.to_i).utc
 
@@ -145,6 +142,9 @@ def parse_tx(hi=nil, time=nil, tx)
             else
               printval = outval - presum
             end
+
+            # sums up donated BTC value
+            @sum += printval
 
             # prints donation stats if input value is above 0
             if printval > 0
