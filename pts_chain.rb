@@ -55,7 +55,7 @@ i=0
 ################################################################################
 
 # script output start (CSV header)
-puts "BLOCK;DATETIME;SENDER;DONATION[PTS];DAYSUM[PTS];DAYRATE[AGS/PTS]"
+puts "\"BLOCK\";\"DATETIME\";\"SENDER\";\"DONATION[PTS]\";\"DAYSUM[PTS]\";\"DAYRATE[AGS/PTS]\""
 
 # parses given transactions
 def parse_tx(hi=nil, time=nil, tx)
@@ -87,7 +87,7 @@ def parse_tx(hi=nil, time=nil, tx)
               puts "+++++ Day Total: #{@sum} PTS (#{@ags} AGS/PTS) +++++"
               puts ""
               puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
-              puts "BLOCK;DATETIME;SENDER;DONATION[PTS];DAYSUM[PTS];DAYRATE[AGS/PTS]"
+              puts "\"BLOCK\";\"DATETIME\";\"SENDER\";\"DONATION[PTS]\";\"DAYSUM[PTS]\";\"DAYRATE[AGS/PTS]\""
             end
 
             # reset PTS sum and sitch day

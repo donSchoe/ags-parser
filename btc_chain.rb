@@ -55,7 +55,7 @@ i=0
 ################################################################################
 
 # script output start (CSV header)
-puts "BLOCK;DATETIME;SENDER;DONATION[BTC];DAYSUM[BTC];DAYRATE[AGS/BTC]"
+puts "\"BLOCK\";\"DATETIME\";\"SENDER\";\"DONATION[BTC]\";\"DAYSUM[BTC]\";\"DAYRATE[AGS/BTC]\""
 
 # parses given transactions
 def parse_tx(hi=nil, time=nil, tx)
@@ -87,7 +87,7 @@ def parse_tx(hi=nil, time=nil, tx)
               puts "+++++ Day Total: #{@sum} BTC (#{@ags} AGS/BTC) +++++"
               puts ""
               puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
-              puts "BLOCK;DATETIME;SENDER;DONATION[BTC];DAYSUM[BTC];DAYRATE[AGS/BTC]"
+              puts "\"BLOCK\";\"DATETIME\";\"SENDER\";\"DONATION[BTC]\";\"DAYSUM[BTC]\";\"DAYRATE[AGS/BTC]\""
             end
 
             # reset BTC sum and sitch day
