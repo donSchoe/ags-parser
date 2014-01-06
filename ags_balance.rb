@@ -42,7 +42,7 @@ btc_sum = 0.0
 ags_rate = 0.0
 day_break = 1388620800.0
 day_count = 0
-day_today = Time.new(Time.now.year, Time.now.month, Time.now.day, 0, 0, 0, 0).utc
+day_today = Time.new(Time.now.utc.year, Time.now.utc.month, Time.now.utc.day, 0, 0, 0, 0).utc
 
 pts_data.lines.each do |line|
   line = line.gsub(/\"/,'').split(';')
