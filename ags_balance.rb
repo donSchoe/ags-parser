@@ -24,9 +24,7 @@
 
 require 'net/http'
 require 'open-uri'
-require 'timeout'
 require 'time'
-require 'date'
 
 ################################################################################
 

@@ -1,7 +1,8 @@
 AGS-Parser
 ==========
 
-Parsing PTS- and BTC-blockchains for angelshares donations in realtime.
+Parsing PTS- and BTC-blockchains for angelshares donations in realtime and
+providing an API in CSV and JSON.
 
 
 Example
@@ -9,29 +10,44 @@ Example
 
 Output of the script
 
- - BTC http://q39.qhor.net/ags/btc.txt
- - PTS http://q39.qhor.net/ags/pts.txt
+ - BTC http://q39.qhor.net/ags/btc.csv.txt
+ - PTS http://q39.qhor.net/ags/pts.csv.txt
+ - AGS http://q39.qhor.net/ags/balances.json
 
 See my bot parsing the output on #angleshares at Freenode. Type: .ags
 
  - http://de.irc2go.com/webchat/?net=freenode&room=angelshares&nick=github1337
 
+Sites using my API:
+
+ - http://agsexplorer.com
+ - http://joelooney.org/ags/
+
+
 Requirements
 ------------
 
- - Ruby 1.9.x (could work with 2.0.x too, untested)
+For the BTC-/PTS-blockchain-parser:
+ - Ruby 1.9.x or 2.0.x
  - Bitcoin daemon running with -txindex=1 -reindex=1
  - Protoshares daemon running with -txindex=1 -reindex=1
 
 Or add txindex=1 to the configuration files. This is needed to parse
 transactions within the blockchain.
 
+For the AGS-balance tool:
+
+ - Ruby 1.9.x or 2.0.x
+ - CSV data from the BTC-/PTS-scripts above
+
+ You can use the example-links above.
+
 
 Usage
 -----
 
-Open the script to modify `@path`, `@debug` and `@clean_csv` settings. Then run
-the script.
+Open the BTC-/PTS-script to modify `@path`, `@debug` and `@clean_csv` settings.
+Then run the script.
 
 To output the transactions to STDOUT:
 
@@ -39,17 +55,27 @@ To output the transactions to STDOUT:
 
 `$ ruby pts_chain.rb [block=35450]`
 
-
 To create a CSV file:
 
 `$ ruby btc_chain.rb [block=276970] > btc_ags.csv &`
 
 `$ ruby pts_chain.rb [block=35450] > pts_ags.csv &`
 
-
 Note: This script runs in an infinite while-loop and parses the transactions
 in real time. Run it from within a screen session or similar to enable continuos
 blockchain parsing, e.g. for HTTP output.
+
+Afterwards you can use the AGS-script to generate a JSON array of balances.
+
+To output the transactions to STDOUT:
+
+`$ ruby ags_balances.rb`
+
+To create a JSON file:
+
+`$ ruby ags_balances.rb > ags_balances.json`
+
+This script only needs updating once a day.
 
 
 Contact
