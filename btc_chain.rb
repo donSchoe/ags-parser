@@ -98,9 +98,6 @@ def parse_tx(hi=nil, time=nil, tx)
           # gets UTC timestamp
           stamp = Time.at(time.to_i).utc
 
-          # calculates current angelshares ratio
-          @ags = 5000.0 / @sum
-
           # checks each input for sender addresses
           senderhash = Hash.new
           jsontx['vin'].each do |vin|
@@ -145,6 +142,9 @@ def parse_tx(hi=nil, time=nil, tx)
 
             # sums up donated BTC value
             @sum += printval
+
+            # calculates current angelshares ratio
+            @ags = 5000.0 / @sum
 
             # prints donation stats if input value is above 0
             if printval > 0
