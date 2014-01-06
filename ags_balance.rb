@@ -29,7 +29,7 @@ require 'time'
 require 'date'
 
 pts_url = 'http://q39.qhor.net/ags/pts.csv.txt'
-btc_url = 'http://q39.qhor.net/ags/pts.csv.txt'
+btc_url = 'http://q39.qhor.net/ags/btc.csv.txt'
 pts_data = open(pts_url).read
 btc_data = open(btc_url).read
 pts_donations = Hash.new
