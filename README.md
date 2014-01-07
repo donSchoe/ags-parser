@@ -10,9 +10,9 @@ Example
 
 Output of the script
 
- - BTC http://q39.qhor.net/ags/btc.csv.txt
- - PTS http://q39.qhor.net/ags/pts.csv.txt
- - AGS http://q39.qhor.net/ags/balances.json
+ - BTC http://q39.qhor.net/ags/3/btc.csv.txt
+ - PTS http://q39.qhor.net/ags/3/pts.csv.txt
+ - AGS http://q39.qhor.net/ags/3/balances.json
 
 See my bot parsing the output on #angleshares at Freenode. Type: .ags
 
