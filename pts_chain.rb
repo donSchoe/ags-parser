@@ -140,14 +140,15 @@ def parse_tx(hi=nil, time=nil, tx)
               printval = outval - presum
             end
 
-            # sums up donated PTS value
-            @sum += printval
-
-            # calculates current angelshares ratio
-            @ags = 5000.0 / @sum
-
             # prints donation stats if input value is above 0
             if printval > 0
+
+              # sums up donated PTS value
+              @sum += printval
+
+              # calculates current angelshares ratio
+              @ags = 5000.0 / @sum
+
               txbits = tx[0..8]
               puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + txbits.to_s + "\";\"" + key.to_s + "\";\"" + printval.round(8).to_s + "\";\"" + @sum.round(8).to_s + "\";\"" + @ags.round(8).to_s + "\""
             end
