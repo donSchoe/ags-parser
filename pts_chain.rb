@@ -59,116 +59,107 @@ puts "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[PTS]\";\"DAYSUM[PT
 
 # parses given transactions
 def parse_tx(hi=nil, time=nil, tx)
-  begin
 
-    # gets raw transaction
-    rawtx = `#{@path} getrawtransaction #{tx}`
+  # gets raw transaction
+  rawtx = `#{@path} getrawtransaction #{tx}`
 
-    # gets transaction JSON data
-    jsontx = `#{@path} decoderawtransaction #{rawtx}`
-    jsontx = JSON.parse(jsontx)
+  # gets transaction JSON data
+  jsontx = `#{@path} decoderawtransaction #{rawtx}`
+  jsontx = JSON.parse(jsontx)
 
-    # check every transaction output
-    jsontx["vout"].each do |vout|
+  # check every transaction output
+  jsontx["vout"].each do |vout|
 
-      # gets recieving address and value
-      address = vout["scriptPubKey"]["addresses"]
-      value = vout["value"]
+    # gets recieving address and value
+    address = vout["scriptPubKey"]["addresses"]
+    value = vout["value"]
 
-      # checks addresses for being angelshares donation address
-      if not address.nil?
-        if address.include? 'PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw'
+    # checks addresses for being angelshares donation address
+    if not address.nil?
+      if address.include? 'PaNGELmZgzRQCKeEKM6ifgTqNkC4ceiAWw'
 
-          # display daily summary and split CSV data in days
-          while (time.to_i > @day.to_i) do
+        # display daily summary and split CSV data in days
+        while (time.to_i > @day.to_i) do
 
-            # disable summary output for clean CSV files
-            if not @clean_csv
-              puts "+++++ Day Total: #{@sum} PTS (#{@ags} AGS/PTS) +++++"
-              puts ""
-              puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
-              puts "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[PTS]\";\"DAYSUM[PTS]\";\"DAYRATE[AGS/PTS]\""
-            end
-
-            # reset PTS sum and sitch day
-            @sum = 0.0
-            @day += 86400
+          # disable summary output for clean CSV files
+          if not @clean_csv
+            puts "+++++ Day Total: #{@sum.round(8)} PTS (#{@ags.round(8)} AGS/PTS) +++++"
+            puts ""
+            puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
+            puts "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[PTS]\";\"DAYSUM[PTS]\";\"DAYRATE[AGS/PTS]\""
           end
 
-          # gets UTC timestamp
-          stamp = Time.at(time.to_i).utc
+          # reset PTS sum and sitch day
+          @sum = 0.0
+          @day += 86400
+        end
 
-          # checks each input for sender addresses
-          senderhash = Hash.new
-          jsontx['vin'].each do |vin|
+        # gets UTC timestamp
+        stamp = Time.at(time.to_i).utc
 
-            # parses the sender from input txid and n
-            sendertx = vin['txid']
-            sendernn = vin['vout']
+        # checks each input for sender addresses
+        senderhash = Hash.new
+        jsontx['vin'].each do |vin|
 
-            # gets raw transaction of the sender
-            senderrawtx = `#{@path} getrawtransaction #{sendertx}`
+          # parses the sender from input txid and n
+          sendertx = vin['txid']
+          sendernn = vin['vout']
 
-            # gets transaction JSON data of the sender
-            senderjsontx = `#{@path} decoderawtransaction #{senderrawtx}`
-            senderjsontx = JSON.parse(senderjsontx)
+          # gets raw transaction of the sender
+          senderrawtx = `#{@path} getrawtransaction #{sendertx}`
 
-            # scan sender transaction for sender address
-            senderjsontx["vout"].each do |sendervout|
-              if sendervout['n'].eql? sendernn
+          # gets transaction JSON data of the sender
+          senderjsontx = `#{@path} decoderawtransaction #{senderrawtx}`
+          senderjsontx = JSON.parse(senderjsontx)
 
-                # gets angelshares sender address and input value
-                if senderhash[sendervout['scriptPubKey']['addresses'].first.to_s].nil?
-                  senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] = sendervout['value'].to_f
-                else
-                  senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] += sendervout['value'].to_f
-                end
+          # scan sender transaction for sender address
+          senderjsontx["vout"].each do |sendervout|
+            if sendervout['n'].eql? sendernn
+
+              # gets angelshares sender address and input value
+              if senderhash[sendervout['scriptPubKey']['addresses'].first.to_s].nil?
+                senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] = sendervout['value'].to_f
+              else
+                senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] += sendervout['value'].to_f
               end
             end
           end
-
-          # gets donation value by each input address of the transaction
-          outval = value
-          presum = 0.0
-          sumval = 0.0
-          senderhash.each do |key, inval|
-            printval = 0.0
-            sumval += inval
-            if sumval <= outval
-              printval = inval
-            else
-              printval = outval - presum
-            end
-
-            # prints donation stats if input value is above 0
-            if printval > 0
-
-              # sums up donated PTS value
-              @sum += printval
-
-              # calculates current angelshares ratio
-              @ags = 5000.0 / @sum
-
-              txbits = tx[0..8]
-              puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + txbits.to_s + "\";\"" + key.to_s + "\";\"" + printval.round(8).to_s + "\";\"" + @sum.round(8).to_s + "\";\"" + @ags.round(8).to_s + "\""
-            end
-            presum += inval
-          end
         end
-      else
 
-        # debugging warning: transaction without output address
-        if @debug
-          puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
+        # gets donation value by each input address of the transaction
+        outval = value
+        presum = 0.0
+        sumval = 0.0
+        senderhash.each do |key, inval|
+          printval = 0.0
+          sumval += inval
+          if sumval <= outval
+            printval = inval
+          else
+            printval = outval - presum
+          end
+
+          # prints donation stats if input value is above 0
+          if printval > 0
+
+            # sums up donated PTS value
+            @sum += printval
+
+            # calculates current angelshares ratio
+            @ags = 5000.0 / @sum
+
+            txbits = tx[0..8]
+            puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + txbits.to_s + "\";\"" + key.to_s + "\";\"" + printval.round(8).to_s + "\";\"" + @sum.round(8).to_s + "\";\"" + @ags.round(8).to_s + "\""
+          end
+          presum += inval
         end
       end
-    end
+    else
 
-  # catches transactions which are too big to parse
-  # @TODO https://github.com/donSchoe/ags-parser/issues/2
-  rescue Errno::E2BIG
-    if @debug
-      puts "!!!ERROR TX TOO BIG TO PARSE #{tx}"
+      # debugging warning: transaction without output address
+      if @debug
+        puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
+      end
     end
   end
 end
@@ -222,8 +213,8 @@ while true do
 
   # debugging output: current loop summary
   if @debug
-    puts "---DEBUG SUM #{@sum}"
-    puts "---DEBUG VALUE #{@ags}"
+    puts "---DEBUG SUM #{@sum.round(8)}"
+    puts "---DEBUG VALUE #{@ags.round(8)}"
   end
 
   # resets starting block height to next unparsed block

@@ -22,6 +22,8 @@
 # You should have received a copy of the GNU General Public License along with
 # this program. If not, see <http://www.gnu.org/licenses/>.
 
+require 'net/http'
+require 'open-uri'
 require 'json'
 
 ################################################################################
@@ -59,17 +61,19 @@ puts "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[BTC]\";\"DAYSUM[BT
 
 # parses given transactions
 def parse_tx(hi=nil, time=nil, tx)
-  begin
 
-    # gets raw transaction
-    rawtx = `#{@path} getrawtransaction #{tx}`
+  # gets raw transaction
+  rawtx = `#{@path} getrawtransaction #{tx}`
+
+  # block to catch huge transactions over size limit
+  begin
 
     # gets transaction JSON data
     jsontx = `#{@path} decoderawtransaction #{rawtx}`
     jsontx = JSON.parse(jsontx)
 
     # check every transaction output
-    jsontx["vout"].each do |vout|
+    jsontx['vout'].each do |vout|
 
       # gets recieving address and value
       address = vout["scriptPubKey"]["addresses"]
@@ -84,7 +88,7 @@ def parse_tx(hi=nil, time=nil, tx)
 
             # disable summary output for clean CSV files
             if not @clean_csv
-              puts "+++++ Day Total: #{@sum} BTC (#{@ags} AGS/BTC) +++++"
+              puts "+++++ Day Total: #{@sum.round(8)} BTC (#{@ags.round(8)} AGS/BTC) +++++"
               puts ""
               puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
               puts "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[BTC]\";\"DAYSUM[BTC]\";\"DAYRATE[AGS/BTC]\""
@@ -109,19 +113,47 @@ def parse_tx(hi=nil, time=nil, tx)
             # gets raw transaction of the sender
             senderrawtx = `#{@path} getrawtransaction #{sendertx}`
 
-            # gets transaction JSON data of the sender
-            senderjsontx = `#{@path} decoderawtransaction #{senderrawtx}`
-            senderjsontx = JSON.parse(senderjsontx)
+            # block to catch huge transactions over size limit
+            begin
 
-            # scan sender transaction for sender address
-            senderjsontx["vout"].each do |sendervout|
-              if sendervout['n'].eql? sendernn
+              # gets transaction JSON data
+              senderjsontx = `#{@path} decoderawtransaction #{senderrawtx}`
+              senderjsontx = JSON.parse(senderjsontx)
 
-                # gets angelshares sender address and input value
-                if senderhash[sendervout['scriptPubKey']['addresses'].first.to_s].nil?
-                  senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] = sendervout['value'].to_f
-                else
-                  senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] += sendervout['value'].to_f
+              # scan sender transaction for sender address
+              senderjsontx['vout'].each do |sendervout|
+                if sendervout['n'].eql? sendernn
+
+                  # gets angelshares sender address and input value
+                  if senderhash[sendervout['scriptPubKey']['addresses'].first.to_s].nil?
+                    senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] = sendervout['value'].to_f
+                  else
+                    senderhash[sendervout['scriptPubKey']['addresses'].first.to_s] += sendervout['value'].to_f
+                  end
+                end
+              end
+
+            # catches transactions which are too big to parse and uses web API
+            rescue Errno::E2BIG
+
+              if @debug
+                puts "!!!WARNG TX TOO BIG TO PARSE #{sendertx}"
+              end
+
+              # uses blockchain info to get tx JSON data
+              senderjsontx = open("https://blockchain.info/tx/#{sendertx}?format=json").read
+              senderjsontx = JSON.parse(senderjsontx)
+
+              # scan sender transaction for sender address
+              senderjsontx['out'].each do |sendervout|
+                if sendervout['n'].eql? sendernn
+
+                  # gets angelshares sender address and input value
+                  if senderhash[sendervout['addr'].to_s].nil?
+                    senderhash[sendervout['addr'].to_s] = (sendervout['value'].to_f / 100000000.0)
+                  else
+                    senderhash[sendervout['addr'].to_s] += (sendervout['value'].to_f / 100000000.0)
+                  end
                 end
               end
             end
@@ -164,11 +196,98 @@ def parse_tx(hi=nil, time=nil, tx)
       end
     end
 
-  # catches transactions which are too big to parse
-  # @TODO https://github.com/donSchoe/ags-parser/issues/2
+  # catches transactions which are too big to parse and uses web API
   rescue Errno::E2BIG
+
     if @debug
-      puts "!!!ERROR TX TOO BIG TO PARSE #{tx}"
+      puts "!!!WARNG TX TOO BIG TO PARSE #{tx}"
+    end
+
+    # uses blockchain info to get tx JSON data
+    jsontx = open("https://blockchain.info/tx/#{tx}?format=json").read
+    jsontx = JSON.parse(jsontx)
+
+    # check every transaction output
+    jsontx['out'].each do |vout|
+
+      # gets recieving address and value
+      address = vout["addr"]
+      value = vout["value"]
+
+      # checks addresses for being angelshares donation address
+      if not address.nil?
+        if address.include? '1ANGELwQwWxMmbdaSWhWLqBEtPTkWb8uDc'
+
+          # display daily summary and split CSV data in days
+          while (time.to_i > @day.to_i) do
+
+            # disable summary output for clean CSV files
+            if not @clean_csv
+              puts "+++++ Day Total: #{@sum.round(8)} BTC (#{@ags.round(8)} AGS/BTC) +++++"
+              puts ""
+              puts "+++++ New Day : #{Time.at(@day.to_i).utc} +++++"
+              puts "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[BTC]\";\"DAYSUM[BTC]\";\"DAYRATE[AGS/BTC]\""
+            end
+
+            # reset BTC sum and sitch day
+            @sum = 0.0
+            @day += 86400
+          end
+
+          # gets UTC timestamp
+          stamp = Time.at(time.to_i).utc
+
+          # checks each input for sender addresses
+          senderhash = Hash.new
+          jsontx['inputs'].each do |vin|
+
+            # parses the sender from input
+            senderadr = vin['addr']
+            senderval = vin['value']
+
+            # gets angelshares sender address and input value
+            if senderhash[sendervout[senderadr].first.to_s].nil?
+              senderhash[sendervout[senderadr].first.to_s] = (senderval.to_f / 100000000.0)
+            else
+              senderhash[sendervout[senderadr].first.to_s] += (senderval.to_f / 100000000.0)
+            end
+          end
+
+          # gets donation value by each input address of the transaction
+          outval = value
+          presum = 0.0
+          sumval = 0.0
+          senderhash.each do |key, inval|
+            printval = 0.0
+            sumval += inval
+            if sumval <= outval
+              printval = inval
+            else
+              printval = outval - presum
+            end
+
+            # prints donation stats if input value is above 0
+            if printval > 0
+
+              # sums up donated BTC value
+              @sum += printval
+
+              # calculates current angelshares ratio
+              @ags = 5000.0 / @sum
+
+              txbits = tx[0..8]
+              puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + txbits.to_s + "\";\"" + key.to_s + "\";\"" + printval.round(8).to_s + "\";\"" + @sum.round(8).to_s + "\";\"" + @ags.round(8).to_s + "\""
+            end
+            presum += inval
+          end
+        end
+      else
+
+        # debugging warning: transaction without output address
+        if @debug
+          puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
+        end
+      end
     end
   end
 end
@@ -222,8 +341,8 @@ while true do
 
   # debugging output: current loop summary
   if @debug
-    puts "---DEBUG SUM #{@sum}"
-    puts "---DEBUG VALUE #{@ags}"
+    puts "---DEBUG SUM #{@sum.round(8)}"
+    puts "---DEBUG VALUE #{@ags.round(8)}"
   end
 
   # resets starting block height to next unparsed block
