@@ -69,11 +69,11 @@ Afterwards you can use the AGS-script to generate a JSON array of balances.
 
 To output the transactions to STDOUT:
 
-`$ ruby ags_balances.rb`
+`$ ruby ags_balance.rb`
 
 To create a JSON file:
 
-`$ ruby ags_balances.rb > ags_balances.json`
+`$ ruby ags_balance.rb > ags_balance.json`
 
 This script only needs updating once a day.
 
