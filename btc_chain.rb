@@ -222,7 +222,7 @@ def parse_tx(hi=nil, time=nil, tx)
               # calculates current angelshares ratio
               @ags = 5000.0 / @sum
 
-              txbits = tx[0..8]
+              txbits = tx
               puts "\"" + hi.to_s + "\";\"" + stamp.to_s + "\";\"" + txbits.to_s + "\";\"" + key.to_s + "\";\"" + printval.round(8).to_s + "\";\"" + @sum.round(8).to_s + "\";\"" + @ags.round(8).to_s + "\""
             end
             presum += inval
