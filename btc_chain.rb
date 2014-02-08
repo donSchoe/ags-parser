@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 # Ruby parser for Angelshares in the Bitcoin Blockchain.
-# Usage: $ ruby btc_chain.rb [block=276970]
+# Usage: $ ruby btc_chain.rb [block=276970] [header=1]
 #
 # Donations accepted:
 # - BTC 1Bzc7PatbRzXz6EAmvSuBuoWED96qy3zgc
@@ -28,16 +28,46 @@ require 'json'
 
 ################################################################################
 
-# Point this path to your BTC daemon!
-@path = '/path/to/bitcoind'
+# BTC daemon connection
+@connection = 'http://user:password@127.0.0.1:8332'
 
 # Enable/Disable debugging output.
-@debug = false
+@debug = true
 
 # Enable/Display daily summaries and output clean CSV only.
 @clean_csv = true
 
 ################################################################################
+
+require 'net/http'
+require 'uri'
+require 'json'
+ 
+class BitcoinRPC
+  def initialize(service_url)
+    @uri = URI.parse(service_url)
+  end
+ 
+  def method_missing(name, *args)
+    post_body = { 'method' => name, 'params' => args, 'id' => 'jsonrpc' }.to_json
+    resp = JSON.parse( http_post_request(post_body) )
+    raise JSONRPCError, resp['error'] if resp['error']
+    resp['result']
+  end
+ 
+  def http_post_request(post_body)
+    http    = Net::HTTP.new(@uri.host, @uri.port)
+    request = Net::HTTP::Post.new(@uri.request_uri)
+    request.basic_auth @uri.user, @uri.password
+    request.content_type = 'application/json'
+    request.body = post_body
+    http.request(request).body
+  end
+ 
+  class JSONRPCError < RuntimeError; end
+end
+
+@rpc = BitcoinRPC.new(@connection)
 
 # gets block number (height) to start the script at
 if ARGV[0].nil?
@@ -57,20 +87,32 @@ i=0
 ################################################################################
 
 # script output start (CSV header)
-puts "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[BTC]\";\"DAYSUM[BTC]\";\"DAYRATE[AGS/BTC]\""
+$stdout.sync = true
+$stderr.sync = true
+
+if ARGV[1].nil?
+  # default
+  header = 1
+else
+  # from args
+  header = ARGV[1].to_i
+end
+
+if header > 0
+  puts "\"BLOCK\";\"DATETIME\";\"TXBITS\";\"SENDER\";\"DONATION[BTC]\";\"DAYSUM[BTC]\";\"DAYRATE[AGS/BTC]\""
+end
 
 # parses given transactions
 def parse_tx(hi=nil, time=nil, tx)
 
   # gets raw transaction
-  rawtx = `#{@path} getrawtransaction #{tx}`
+  rawtx = @rpc.getrawtransaction(tx)
 
   # block to catch huge transactions over size limit
   begin
 
     # gets transaction JSON data
-    jsontx = `#{@path} decoderawtransaction #{rawtx}`
-    jsontx = JSON.parse(jsontx)
+    jsontx = @rpc.decoderawtransaction(rawtx)
 
     # check every transaction output
     jsontx['vout'].each do |vout|
@@ -111,14 +153,13 @@ def parse_tx(hi=nil, time=nil, tx)
             sendernn = vin['vout']
 
             # gets raw transaction of the sender
-            senderrawtx = `#{@path} getrawtransaction #{sendertx}`
+            senderrawtx = @rpc.getrawtransaction(sendertx)
 
             # block to catch huge transactions over size limit
             begin
 
               # gets transaction JSON data
-              senderjsontx = `#{@path} decoderawtransaction #{senderrawtx}`
-              senderjsontx = JSON.parse(senderjsontx)
+              senderjsontx = @rpc.decoderawtransaction(senderrawtx)
 
               # scan sender transaction for sender address
               senderjsontx['vout'].each do |sendervout|
@@ -137,7 +178,7 @@ def parse_tx(hi=nil, time=nil, tx)
             rescue Errno::E2BIG
 
               if @debug
-                puts "!!!WARNG TX TOO BIG TO PARSE #{sendertx}"
+                $stderr.puts "!!!WARNG TX TOO BIG TO PARSE #{sendertx}"
               end
 
               # uses blockchain info to get tx JSON data
@@ -191,7 +232,7 @@ def parse_tx(hi=nil, time=nil, tx)
 
         # debugging warning: transaction without output address
         if @debug
-          puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
+          $stderr.puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
         end
       end
     end
@@ -200,7 +241,7 @@ def parse_tx(hi=nil, time=nil, tx)
   rescue Errno::E2BIG
 
     if @debug
-      puts "!!!WARNG TX TOO BIG TO PARSE #{tx}"
+      $stderr.puts "!!!WARNG TX TOO BIG TO PARSE #{tx}"
     end
 
     # uses blockchain info to get tx JSON data
@@ -285,7 +326,7 @@ def parse_tx(hi=nil, time=nil, tx)
 
         # debugging warning: transaction without output address
         if @debug
-          puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
+          $stderr.puts "!!!WARNG ADDRESS EMPTY #{vout.to_s}"
         end
       end
     end
@@ -297,25 +338,28 @@ while true do
 
   # debugging output: loop number & start block height
   if @debug
-    puts "---DEBUG LOOP #{i}"
-    puts "---DEBUG BLOCK #{blockstrt}"
+    $stderr.puts "---DEBUG LOOP #{i}"
+    $stderr.puts "---DEBUG BLOCK #{blockstrt}"
   end
 
   # gets current block height
-  blockhigh = `#{@path} getblockcount`
+  blockhigh = @rpc.getblockcount
 
   #reads every block by block
   (blockstrt.to_i..blockhigh.to_i).each do |hi|
+    if @debug
+      $stderr.puts "---DEBUG BLOCK #{hi}"
+    end
 
     # gets block hash string
-    blockhash = `#{@path} getblockhash #{hi}`
+    blockhash = @rpc.getblockhash(hi)
 
     # gets JSON block data
-    blockinfo = `#{@path} getblock #{blockhash}`
+    blockinfo = @rpc.getblock(blockhash)
 
     # gets block transactions & time
-    transactions = JSON.parse(blockinfo)['tx']
-    time = JSON.parse(blockinfo)['time']
+    transactions = blockinfo['tx']
+    time = blockinfo['time']
 
     # parses transactions ...
     if not transactions.nil?
@@ -334,15 +378,15 @@ while true do
 
       # debugging warning: block without transactions
       if @debug
-        puts "!!!WARNG NO TRANSACTIONS IN BLOCK #{hi}"
+        $stderr.puts "!!!WARNG NO TRANSACTIONS IN BLOCK #{hi}"
       end
     end
   end
 
   # debugging output: current loop summary
   if @debug
-    puts "---DEBUG SUM #{@sum.round(8)}"
-    puts "---DEBUG VALUE #{@ags.round(8)}"
+    $stderr.puts "---DEBUG SUM #{@sum.round(8)}"
+    $stderr.puts "---DEBUG VALUE #{@ags.round(8)}"
   end
 
   # resets starting block height to next unparsed block
