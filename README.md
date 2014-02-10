@@ -51,15 +51,21 @@ Then run the script.
 
 To output the transactions to STDOUT:
 
-`$ ruby btc_chain.rb [block=276970]`
+`$ ruby btc_chain.rb [block=276970] [header=1]`
 
-`$ ruby pts_chain.rb [block=35450]`
+`$ ruby pts_chain.rb [block=35450] [header=1]`
 
 To create a CSV file:
 
 `$ ruby btc_chain.rb [block=276970] > btc_ags.csv &`
 
 `$ ruby pts_chain.rb [block=35450] > pts_ags.csv &`
+
+To update a CSV file from specific block:
+
+`$ ruby btc_chain.rb [block=277000] [header=0] >> btc_ags.csv &`
+
+`$ ruby pts_chain.rb [block=36000] [header=0] >> pts_ags.csv &`
 
 Note: This script runs in an infinite while-loop and parses the transactions
 in real time. Run it from within a screen session or similar to enable continuos
@@ -69,11 +75,15 @@ Afterwards you can use the AGS-script to generate a JSON array of balances.
 
 To output the transactions to STDOUT:
 
-`$ ruby ags_balance.rb`
+`$ ruby ags_balance.rb [brief=0]`
 
 To create a JSON file:
 
 `$ ruby ags_balance.rb > ags_balance.json`
+
+To create a brief JSON file:
+
+`$ ruby ags_balance.rb [brief=1] > ags_balance.json`
 
 This script only needs updating once a day.
 

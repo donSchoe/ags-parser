@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 #
 # Ruby parser for Angelshares in your BTC/PTS wallet.
-# Usage: $ ruby ags_balances.rb
+# Usage: $ ruby ags_balances.rb [brief=0]
 #
 # Donations accepted:
 # - BTC 1Bzc7PatbRzXz6EAmvSuBuoWED96qy3zgc
@@ -33,6 +33,14 @@ pts_url = 'http://q39.qhor.net/ags/4/pts.csv.txt'
 btc_url = 'http://q39.qhor.net/ags/4/btc.csv.txt'
 
 ################################################################################
+
+if ARGV[0].nil?
+  # default
+  brief = 0
+else
+  # from args
+  brief = ARGV[0].to_i
+end
 
 # reads the http content
 pts_data = open(pts_url).read
@@ -233,27 +241,39 @@ end
 ags_balances = ags_balances.sort_by {|key, value| value}.reverse
 
 # writes JSON for each address
-ags_balances.each do |adr, ags|
-  puts '    "address":"' + adr.to_s + '",'
-  puts '    "ags_balance":"' + ags.to_f.round(8).to_s + '",'
-  puts '    "tx_bits": {'
-
-  # adds JSON for each transaction
-  n = 0
-  ags_txbits[adr].each do |txbit|
-    if txbit.eql? ags_txbits[adr].last
-      puts '      "' + n.to_s + '":"' + txbit.to_s + '"'
+if brief > 0
+  ags_balances.each do |adr, ags|
+    print '    "' + adr.to_s + '":' + ags.to_f.round(8).to_s
+    # finishes JSON
+    if adr.eql? ags_balances.last.first
+      puts ''
     else
-      puts '      "' + n.to_s + '":"' + txbit.to_s + '",'
+      puts ','
     end
-    n += 1
   end
+else
+  ags_balances.each do |adr, ags|
+    puts '    "address":"' + adr.to_s + '",'
+    puts '    "ags_balance":"' + ags.to_f.round(8).to_s + '",'
+    puts '    "tx_bits": {'
 
-  # finishes JSON
-  if adr.eql? ags_balances.last.first
-    puts'    }'
-  else
-    puts'    },'
+    # adds JSON for each transaction
+    n = 0
+    ags_txbits[adr].each do |txbit|
+      if txbit.eql? ags_txbits[adr].last
+        puts '      "' + n.to_s + '":"' + txbit.to_s + '"'
+      else
+        puts '      "' + n.to_s + '":"' + txbit.to_s + '",'
+      end
+      n += 1
+    end
+
+    # finishes JSON
+    if adr.eql? ags_balances.last.first
+      puts'    }'
+    else
+      puts'    },'
+    end
   end
 end
 
