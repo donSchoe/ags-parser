@@ -103,11 +103,8 @@ end
 # parses given transactions
 def parse_tx(hi=nil, time=nil, tx)
 
-  # gets raw transaction
-  rawtx = @rpc.getrawtransaction(tx)
-
   # gets transaction JSON data
-  jsontx = @rpc.decoderawtransaction(rawtx)
+  jsontx = @rpc.getrawtransaction(tx, 1)
 
   # check every transaction output
   jsontx["vout"].each do |vout|
@@ -147,11 +144,8 @@ def parse_tx(hi=nil, time=nil, tx)
           sendertx = vin['txid']
           sendernn = vin['vout']
 
-          # gets raw transaction of the sender
-          senderrawtx = @rpc.getrawtransaction(sendertx)
-
           # gets transaction JSON data of the sender
-          senderjsontx = @rpc.decoderawtransaction(senderrawtx)
+          senderjsontx = @rpc.getrawtransaction(sendertx, 1)
 
           # scan sender transaction for sender address
           senderjsontx["vout"].each do |sendervout|
